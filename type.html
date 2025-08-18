@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Typing Test</title>
+  <style>
+    :root {
+      --bg: #111;
+      --green: #15FF00;
+      --gray: #555;   
+      --red: #ff3b3b;
+      --caret: #444;  
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--green);
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* no scroll */
+    }
+    h1 { margin: 12px 0; }
+
+    .navbar {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      background: #222;
+      padding: 10px;
+      position: sticky;
+      top: 0;
+    }
+    .navbar button, .navbar select {
+      background: none;
+      border: 2px solid var(--green);
+      color: var(--green);
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .navbar button:hover, .navbar select:hover {
+      background: var(--green);
+      color: var(--bg);
+    }
+    .navbar select {
+      appearance: none;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 900px;
+      width: 100%;
+      padding: 20px;
+    }
+
+    .words {
+      width: 100%;
+      margin: 20px;
+      font-size: 22px;
+      line-height: 1.7;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      text-align: center;
+      user-select: none;
+    }
+
+    .char {
+      color: var(--gray);
+      white-space: pre;
+    }
+    .char.correct   { color: var(--green); }
+    .char.incorrect { color: var(--red); }
+    .current-char {
+      background: var(--caret);
+      border-radius: 3px;
+    }
+    #input {
+      opacity: 0;
+      position: absolute;
+      left: -9999px;
+    }
+
+    .stats {
+      margin-top: 16px;
+      font-size: 18px;
+      display: flex;
+      gap: 20px;
+    }
+    .timer-box {
+      font-weight: bold;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1 style="text-decoration: underline;">Simple Typing Test</h1>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <button onclick="setTime(30)">30s</button>
+    <button onclick="setTime(60)">60s</button>
+    <button onclick="setTime(90)">90s</button>
+    <button onclick="setTime(120)">120s</button>
+    <button onclick="toggleNumbers()">numbers</button>
+    <button onclick="togglePunctuation()">punctuations</button>
+    <!-- Theme Dropdown -->
+    <select id="theme" onchange="changeTheme(this.value)">
+      <option value="matrix">Matrix</option>
+      <option value="midnight">Midnight</option>
+      <option value="sakura">Sakura</option>
+      <option value="solarized">Solarized</option>
+    </select>
+  </div>
+
+  <div class="container">
+    <div class="words" id="words" title="Click to focus"></div>
+    <input id="input" type="text" autofocus />
+    <div class="stats">
+      <div class="timer-box">⏱ Time Left: <span id="timer">0</span>s</div>
+      <div id="stats"></div>
+    </div>
+  </div>
+
+  <script>
+    const wordsList = [
+      "hello","world","typing","speed","test","keyboard","practice","javascript",
+      "program","code","simple","random","example","accuracy","minute","second"
+    ];
+    const numbers = ["123","456","789","101","202"];
+    const punctuation = [".",",","!","?",";"];
+
+    let includeNumbers = false;
+    let includePunctuation = false;
+
+    let words = [];
+    let fullText = "";
+    let started = false;
+    let timeLimit = 30;
+    let timeLeft = timeLimit;
+    let timerId = null;
+    let correctChars = 0;
+
+    const wordsDiv = document.getElementById("words");
+    const input    = document.getElementById("input");
+    const statsDiv = document.getElementById("stats");
+    const timerSpan = document.getElementById("timer");
+
+    function buildWords() {
+      let pool = [...wordsList];
+      if (includeNumbers) pool = pool.concat(numbers);
+      if (includePunctuation) pool = pool.concat(punctuation);
+
+      words = Array.from({length: 30}, () => pool[Math.floor(Math.random()*pool.length)]);
+      fullText = words.join(" ");
+    }
+
+    function renderWords() {
+      wordsDiv.innerHTML = "";
+      for (let i = 0; i < fullText.length; i++) {
+        const span = document.createElement("span");
+        span.textContent = fullText[i];
+        span.id = "char-" + i;
+        span.className = "char";
+        wordsDiv.appendChild(span);
+      }
+      document.getElementById("char-0")?.classList.add("current-char");
+    }
+
+    function setTime(seconds) {
+      timeLimit = seconds;
+      resetTest();
+    }
+
+    function toggleNumbers() {
+      includeNumbers = !includeNumbers;
+      resetTest();
+    }
+    function togglePunctuation() {
+      includePunctuation = !includePunctuation;
+      resetTest();
+    }
+
+    function resetTest() {
+      clearInterval(timerId);
+      started = false;
+      input.disabled = false;
+      input.value = "";
+      correctChars = 0;
+      timeLeft = timeLimit;
+      timerSpan.textContent = timeLeft;
+      buildWords();
+      renderWords();
+      input.focus();
+      statsDiv.innerHTML = "";
+    }
+
+    function startTimer() {
+      timerId = setInterval(() => {
+        timeLeft--;
+        timerSpan.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timerId);
+          input.disabled = true;
+          showStats();
+        }
+      }, 1000);
+    }
+
+    function showStats() {
+      const typed = input.value.length;
+      const wpm = Math.round((correctChars / 5) / (timeLimit / 60));
+      const accuracy = typed ? Math.round((correctChars / typed) * 100) : 0;
+      statsDiv.innerHTML = `⌨️ WPM: ${wpm} | 🎯 Accuracy: ${accuracy}%`;
+    }
+
+    wordsDiv.addEventListener("click", () => input.focus());
+
+    input.addEventListener("input", (e) => {
+      if (!started) {
+        started = true;
+        startTimer();
+      }
+      const typed = e.target.value;
+      const len = typed.length;
+
+      correctChars = 0;
+      for (let i = 0; i < fullText.length; i++) {
+        const span = document.getElementById("char-" + i);
+        if (!span) continue;
+
+        if (i < len) {
+          const isCorrect = typed[i] === fullText[i];
+          span.classList.toggle("correct", isCorrect);
+          span.classList.toggle("incorrect", !isCorrect);
+          if (isCorrect) correctChars++;
+        } else {
+          span.classList.remove("correct", "incorrect");
+        }
+      }
+
+      document.querySelector(".current-char")?.classList.remove("current-char");
+      const caretIndex = Math.min(len, fullText.length - 1);
+      document.getElementById("char-" + caretIndex)?.classList.add("current-char");
+
+      if (len >= fullText.length) {
+        clearInterval(timerId);
+        input.disabled = true;
+        showStats();
+      }
+    });
+
+    // Tab key → refresh page
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        location.reload();
+      }
+    });
+
+    // Theme Change
+    function changeTheme(theme) {
+      const root = document.documentElement;
+      if (theme === "matrix") {
+        root.style.setProperty("--bg", "#111");
+        root.style.setProperty("--green", "#15FF00");
+        root.style.setProperty("--gray", "#555");
+        root.style.setProperty("--red", "#ff3b3b");
+        root.style.setProperty("--caret", "#444");
+      } else if (theme === "midnight") {
+        root.style.setProperty("--bg", "#000814");
+        root.style.setProperty("--green", "#00b4d8");
+        root.style.setProperty("--gray", "#aaa");
+        root.style.setProperty("--red", "#ff595e");
+        root.style.setProperty("--caret", "#023e8a");
+      } else if (theme === "sakura") {
+        root.style.setProperty("--bg", "#fff0f6");
+        root.style.setProperty("--green", "#ff4d6d");
+        root.style.setProperty("--gray", "#999");
+        root.style.setProperty("--red", "#111");
+        root.style.setProperty("--caret", "#ff85a1");
+      } else if (theme === "solarized") {
+        root.style.setProperty("--bg", "#002b36");
+        root.style.setProperty("--green", "#b58900");
+        root.style.setProperty("--gray", "#93a1a1");
+        root.style.setProperty("--red", "#dc322f");
+        root.style.setProperty("--caret", "#268bd2");
+      }
+      resetTest();
+    }
+
+    buildWords();
+    renderWords();
+    timerSpan.textContent = timeLeft;
+    input.focus();
+  </script>
+</body>
+</html>
