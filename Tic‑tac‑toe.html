@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Tic‑Tac‑Toe</title>
+  <style>
+    :root{
+      --bg:#0b0f1a;
+      --panel:#0f172a;
+      --text:#cbd5e1;
+      --grid:#1f2937;
+      --blue:#00e5ff;
+      --red:#ff1744;
+      --blue-glow: 0 0 10px rgba(0,229,255,.8), 0 0 20px rgba(0,229,255,.6), 0 0 40px rgba(0,229,255,.4);
+      --red-glow: 0 0 10px rgba(255,23,68,.8), 0 0 20px rgba(255,23,68,.6), 0 0 40px rgba(255,23,68,.4);
+      --focus: 0 0 0 3px rgba(0,229,255,.3);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:radial-gradient(1200px 800px at 80% -10%, rgba(0,229,255,.06), transparent),
+                         radial-gradient(900px 700px at -10% 110%, rgba(255,23,68,.06), transparent),
+                         var(--bg);
+      color:var(--text); font-family:system-ui,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;
+      display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+
+    .app{ width: min(94vw, 980px); }
+
+    .header{ display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:16px;}
+    .title{ font-weight:800; letter-spacing:.5px; font-size:clamp(20px, 2.4vw + 12px, 34px);}
+    .title span.blue{ color:var(--blue); text-shadow:var(--blue-glow)}
+    .title span.red{ color:var(--red); text-shadow:var(--red-glow)}
+
+    .controls{ display:flex; gap:8px; flex-wrap:wrap }
+    .btn{
+      border:1px solid #243244; background:linear-gradient(180deg,#0f172a,#0b1321);
+      color:#e2e8f0; padding:10px 14px; border-radius:14px; cursor:pointer;
+      transition:.2s transform ease, .2s box-shadow ease, .2s background ease, .2s border ease;
+      box-shadow: 0 8px 18px rgba(0,0,0,.25);
+    }
+    .btn:hover{ transform: translateY(-1px); border-color:#2e3c52 }
+    .btn:active{ transform: translateY(0) scale(.98) }
+    .btn.primary{ border-color:#14506b; background:linear-gradient(180deg, #0d2a36, #0b1e29);}
+    .btn.primary:focus{ outline:none; box-shadow: var(--focus);}
+
+    .status{
+      background:rgba(15,23,42,.7); border:1px solid #1f2a44; border-radius:16px; padding:10px 14px; min-height:44px;
+      display:flex; align-items:center; gap:10px; box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 8px 24px rgba(0,0,0,.2);
+      font-weight:600; letter-spacing:.3px; backdrop-filter: blur(6px);
+    }
+
+    .board-wrap{
+      position:relative; aspect-ratio:1/1; width: min(94vw, 520px); margin: 18px auto; 
+      border-radius:24px; padding:18px; background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.16));
+      box-shadow: 0 20px 50px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .grid{
+      display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+      gap:10px; height:100%; width:100%;
+    }
+
+    .cell{
+      background: radial-gradient(180px 140px at 50% 30%, rgba(255,255,255,.06), rgba(255,255,255,.01)),
+                  linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.01));
+      border:1px solid #1f2937; border-radius:16px; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; position:relative; user-select:none; box-shadow: inset 0 2px 4px rgba(255,255,255,.03), 0 10px 24px rgba(0,0,0,.2);
+      transition: transform .08s ease; min-height: 76px;
+    }
+    .cell:hover{ transform: translateY(-2px)}
+    .cell.filled{ cursor:not-allowed }
+
+    .mark{ font-size: clamp(38px, 9.6vw, 88px); font-weight:900; line-height:1; letter-spacing: .02em; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));}
+    .mark.x{ color: var(--blue); text-shadow: var(--blue-glow) }
+    .mark.o{ color: var(--red);  text-shadow: var(--red-glow) }
+
+    /* SVG overlay for winning line */
+    .overlay{ pointer-events:none; position:absolute; inset:18px; }
+
+    .legend{ display:flex; gap:14px; align-items:center; justify-content:center; flex-wrap:wrap; opacity:.9; }
+    .pill{ display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; border:1px solid #23304a; background:rgba(13,23,42,.6) }
+    .swatch{ width:14px; height:14px; border-radius:50% }
+    .swatch.blue{ background:var(--blue); box-shadow: var(--blue-glow) }
+    .swatch.red{ background:var(--red); box-shadow: var(--red-glow) }
+
+    /* Modal */
+    dialog{ border:none; border-radius:18px; padding:0; width:min(92vw, 560px); background:linear-gradient(180deg, #0e162a, #0a1222); color:#e5e7eb; box-shadow: 0 30px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05); }
+    .modal{ padding:20px 20px 10px; }
+    .modal h2{ margin:0 0 12px; font-size:24px }
+    .modal p{ margin:0 0 14px; opacity:.85 }
+    .modal section{ display:grid; grid-template-columns: 1fr; gap:10px; }
+    .modal .choice{ display:flex; gap:10px; }
+    .modal .group{ border:1px solid #22314a; border-radius:14px; padding:12px; background:rgba(255,255,255,.02) }
+    .modal .row{ display:flex; gap:8px; flex-wrap:wrap }
+    .opt{ position:relative; }
+    .opt input{ position:absolute; inset:0; opacity:0; }
+    .chip{ border:1px solid #243244; background:linear-gradient(180deg,#111827,#0b1321); padding:10px 14px; border-radius:12px; display:inline-flex; gap:8px; align-items:center; cursor:pointer; font-weight:600;}
+    .opt input:checked + .chip{ outline: none; box-shadow: var(--focus); border-color:#2b8ea1; }
+    .modal footer{ display:flex; justify-content:flex-end; gap:8px; padding:12px 20px 20px }
+
+    @media (max-width:480px){
+      .board-wrap{ padding:12px; border-radius:16px }
+      .overlay{ inset:12px }
+      .cell{ border-radius:12px; min-height:70px }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="title">Neon <span class="blue">X</span> / <span class="red">O</span> — Tic‑Tac‑Toe</div>
+      <div class="controls">
+        <button class="btn primary" id="newGameBtn" title="Start a new game">New Game</button>
+        <button class="btn" id="changeModeBtn" title="Change mode / difficulty">Change Mode</button>
+      </div>
+    </div>
+
+    <div class="status" id="status">Choose a mode to begin…</div>
+
+    <div class="board-wrap">
+      <div class="grid" id="grid" role="grid" aria-label="Tic Tac Toe Board"></div>
+      <svg class="overlay" id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+    </div>
+
+    <div class="legend">
+      <span class="pill"><span class="swatch blue"></span> X (Player 1)</span>
+      <span class="pill"><span class="swatch red"></span> O (Player 2 / AI)</span>
+    </div>
+  </div>
+
+  <dialog id="modeDialog">
+    <form method="dialog" class="modal" id="modeForm">
+      <h2>Choose how to play</h2>
+      <p>Select two players or play vs AI. If AI, choose difficulty.</p>
+      <section>
+        <div class="group">
+          <div class="row choice" role="radiogroup" aria-label="Game Mode">
+            <label class="opt"><input type="radio" name="mode" value="pvp" checked><span class="chip">👥 Two Players</span></label>
+            <label class="opt"><input type="radio" name="mode" value="ai"><span class="chip">🤖 Play vs AI</span></label>
+          </div>
+        </div>
+        <div class="group" id="aiGroup" aria-hidden="true">
+          <div style="font-weight:700; margin-bottom:6px">AI Difficulty</div>
+          <div class="row" role="radiogroup" aria-label="Difficulty">
+            <label class="opt"><input type="radio" name="difficulty" value="easy" checked><span class="chip">🌱 Easy</span></label>
+            <label class="opt"><input type="radio" name="difficulty" value="medium"><span class="chip">🧩 Medium</span></label>
+            <label class="opt"><input type="radio" name="difficulty" value="hard"><span class="chip">🧠 Hard</span></label>
+          </div>
+        </div>
+      </section>
+      <footer>
+        <button class="btn" value="cancel">Cancel</button>
+        <button class="btn primary" id="startBtn" value="ok">Start</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <script>
+    // --- Game State ---
+    const gridEl = document.getElementById('grid');
+    const statusEl = document.getElementById('status');
+    const overlay = document.getElementById('overlay');
+    const modeDialog = document.getElementById('modeDialog');
+    const modeForm = document.getElementById('modeForm');
+    const aiGroup = document.getElementById('aiGroup');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const changeModeBtn = document.getElementById('changeModeBtn');
+
+    let board, xIsNext, gameOver;
+    let mode = 'pvp'; // 'pvp' or 'ai'
+    let difficulty = 'easy'; // 'easy' | 'medium' | 'hard'
+
+    const WIN_LINES = [
+      [0,1,2], [3,4,5], [6,7,8], // rows
+      [0,3,6], [1,4,7], [2,5,8], // cols
+      [0,4,8], [2,4,6]           // diags
+    ];
+
+    // Pre-create cells
+    function createBoard() {
+      gridEl.innerHTML = '';
+      for (let i=0;i<9;i++){
+        const cell = document.createElement('button');
+        cell.className = 'cell';
+        cell.setAttribute('role','gridcell');
+        cell.setAttribute('aria-label', 'Cell ' + (i+1));
+        cell.dataset.index = i;
+        cell.addEventListener('click', onCellClick);
+        gridEl.appendChild(cell);
+      }
+    }
+
+    function resetGame(announce=true){
+      board = Array(9).fill(null);
+      xIsNext = true;
+      gameOver = false;
+      overlay.innerHTML = '';
+      [...gridEl.children].forEach(c=>{ c.classList.remove('filled'); c.innerHTML=''; });
+      if (announce) updateStatus();
+      // If AI plays first and AI is 'X'? We keep player as X always for clarity here.
+    }
+
+    function updateStatus(msg){
+      if (msg){ statusEl.textContent = msg; return; }
+      if (gameOver) return;
+      const turn = xIsNext ? 'X' : 'O';
+      statusEl.innerHTML = `Turn: <span class="${xIsNext?'blue':'red'}" style="font-weight:800">${turn}</span>`;
+    }
+
+    function onCellClick(e){
+      const idx = +e.currentTarget.dataset.index;
+      if (gameOver || board[idx]) return;
+      makeMove(idx, xIsNext ? 'X' : 'O');
+      if (gameOver) return;
+
+      if (mode === 'ai' && !xIsNext){
+        // Allow brief yield so DOM updates before AI computes on large devices
+        setTimeout(()=>{
+          const aiIdx = chooseAiMove();
+          if (aiIdx != null) makeMove(aiIdx, 'O');
+        }, 60);
+      }
+    }
+
+    function makeMove(idx, mark){
+      if (board[idx] || gameOver) return;
+      board[idx] = mark;
+      const cell = gridEl.children[idx];
+      cell.classList.add('filled');
+      const span = document.createElement('span');
+      span.className = 'mark ' + (mark==='X'?'x':'o');
+      span.textContent = mark;
+      cell.appendChild(span);
+
+      const result = calculateWinner(board);
+      if (result){
+        gameOver = true;
+        drawWinLine(result.combo, result.winner);
+        updateStatus(`${result.winner} wins!`);
+        return;
+      }
+      if (board.every(Boolean)){
+        gameOver = true;
+        updateStatus('Draw!');
+        return;
+      }
+      xIsNext = !xIsNext;
+      updateStatus();
+    }
+
+    function calculateWinner(b){
+      for (const combo of WIN_LINES){
+        const [a,b2,c] = combo;
+        if (b[a] && b[a]===b[b2] && b[a]===b[c]){
+          return { winner: b[a], combo };
+        }
+      }
+      return null;
+    }
+
+    // --- Winning Line Drawing via SVG (responsive) ---
+    function drawWinLine(combo, winner){
+      const color = winner==='X' ? getComputedStyle(document.documentElement).getPropertyValue('--blue') : getComputedStyle(document.documentElement).getPropertyValue('--red');
+      const lines = {
+        '0,1,2':[ [0,16.66],[100,16.66] ],
+        '3,4,5':[ [0,50],[100,50] ],
+        '6,7,8':[ [0,83.33],[100,83.33] ],
+        '0,3,6':[ [16.66,0],[16.66,100] ],
+        '1,4,7':[ [50,0],[50,100] ],
+        '2,5,8':[ [83.33,0],[83.33,100] ],
+        '0,4,8':[ [0,0],[100,100] ],
+        '2,4,6':[ [100,0],[0,100] ]
+      };
+      const key = combo.join(',');
+      const [[x1,y1],[x2,y2]] = lines[key];
+      overlay.innerHTML = '';
+      const path = document.createElementNS('http://www.w3.org/2000/svg','line');
+      path.setAttribute('x1',x1); path.setAttribute('y1',y1); path.setAttribute('x2',x2); path.setAttribute('y2',y2);
+      path.setAttribute('stroke', color.trim());
+      path.setAttribute('stroke-width','3');
+      path.setAttribute('stroke-linecap','round');
+      path.style.filter = winner==='X' ? 'drop-shadow(0 0 6px rgba(0,229,255,.9)) drop-shadow(0 0 14px rgba(0,229,255,.6))' : 'drop-shadow(0 0 6px rgba(255,23,68,.9)) drop-shadow(0 0 14px rgba(255,23,68,.6))';
+      overlay.appendChild(path);
+    }
+
+    // --- AI Logic ---
+    function chooseAiMove(){
+      // AI is always 'O', player is 'X'
+      if (difficulty === 'easy') return randomMove();
+      if (difficulty === 'medium') return mediumMove();
+      return hardMove();
+    }
+
+    function availableMoves(b=board){ return b.map((v,i)=>v?null:i).filter(i=>i!==null); }
+
+    function randomMove(){
+      const moves = availableMoves();
+      if (!moves.length) return null;
+      return moves[Math.floor(Math.random()*moves.length)];
+    }
+
+    function mediumMove(){
+      const me='O', opp='X';
+      // 1) Win if possible
+      for (const i of availableMoves()){
+        const b = board.slice(); b[i]=me; if (calculateWinner(b)?.winner===me) return i;
+      }
+      // 2) Block immediate opponent win
+      for (const i of availableMoves()){
+        const b = board.slice(); b[i]=opp; if (calculateWinner(b)?.winner===opp) return i;
+      }
+      // 3) Center
+      if (!board[4]) return 4;
+      // 4) Corners
+      const corners=[0,2,6,8].filter(i=>!board[i]);
+      if (corners.length) return corners[Math.floor(Math.random()*corners.length)];
+      // 5) Random
+      return randomMove();
+    }
+
+    function hardMove(){
+      // Minimax with small optimizations (depth limiting not required on 3x3)
+      const me='O';
+      let bestScore = -Infinity, bestMove = null;
+      for (const i of availableMoves()){
+        const b = board.slice(); b[i]=me; const score = minimax(b,false);
+        if (score>bestScore){ bestScore=score; bestMove=i; }
+      }
+      return bestMove;
+    }
+
+    function minimax(b, isMaximizing){
+      const res = calculateWinner(b);
+      if (res){
+        if (res.winner==='O') return 10;
+        if (res.winner==='X') return -10;
+      }
+      if (b.every(Boolean)) return 0; // draw
+      const player = isMaximizing ? 'O' : 'X';
+      let best = isMaximizing ? -Infinity : Infinity;
+      for (const i of b.map((v,i)=>v?null:i).filter(i=>i!==null)){
+        b[i]=player;
+        const score = minimax(b, !isMaximizing);
+        b[i]=null;
+        best = isMaximizing ? Math.max(best, score) : Math.min(best, score);
+      }
+      return best;
+    }
+
+    // --- Mode / Dialog handling ---
+    function openModeDialog(){
+      // reflect current selection
+      modeForm.mode.value = mode;
+      aiGroup.setAttribute('aria-hidden', modeForm.mode.value==='ai' ? 'false' : 'true');
+      (modeForm.difficulty || {}).value = difficulty;
+      modeDialog.showModal();
+    }
+
+    function startGameFromDialog(){
+      mode = modeForm.mode.value;
+      if (mode==='ai'){
+        aiGroup.setAttribute('aria-hidden','false');
+        difficulty = (modeForm.difficulty || {value:'easy'}).value;
+      } else {
+        aiGroup.setAttribute('aria-hidden','true');
+      }
+      resetGame();
+      updateStatus(`Game started: ${mode==='ai' ? 'vs AI ('+difficulty+')' : 'Two Players'}`);
+      modeDialog.close();
+    }
+
+    // --- Events ---
+    modeForm.mode.forEach(r=>{
+      r.addEventListener('change',()=>{
+        aiGroup.setAttribute('aria-hidden', r.value==='ai' ? 'false' : 'true');
+      });
+    });
+
+    document.getElementById('startBtn').addEventListener('click', (e)=>{
+      e.preventDefault(); startGameFromDialog();
+    });
+
+    newGameBtn.addEventListener('click', ()=> resetGame());
+    changeModeBtn.addEventListener('click', openModeDialog);
+
+    // --- Bootstrap ---
+    createBoard();
+    // show dialog on first load
+    openModeDialog();
+
+  </script>
+</body>
+</html>
