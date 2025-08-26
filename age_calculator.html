@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon Age Calculator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;500&display=swap');
+
+    body {
+      background: #000; /* pure black */
+      font-family: 'Orbitron', sans-serif;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      padding: 15px;
+    }
+
+    h1 {
+      color: #0ff;
+      font-size: 2rem;
+      letter-spacing: 2px;
+      text-shadow: 0 0 15px #0ff, 0 0 25px #0ff;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .box {
+      background: rgba(20, 20, 20, 0.95);
+      padding: 25px 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.5), inset 0 0 15px rgba(0, 255, 255, 0.2);
+      border: 1px solid #0ff;
+      backdrop-filter: blur(6px);
+
+      max-width: 420px;
+      width: 100%;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px; /* consistent spacing */
+    }
+
+    label {
+      font-size: 16px;
+      color: #ff3dfc;
+      text-shadow: 0 0 8px #ff3dfc, 0 0 20px #ff3dfc;
+    }
+
+    input[type="date"] {
+      background: #000;
+      border: 2px solid #0ff;
+      color: #0ff;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 15px;
+      outline: none;
+      text-align: center;
+      width: 100%;
+      transition: 0.3s;
+      box-shadow: 0 0 10px #0ff, inset 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    input:focus {
+      box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 12px 25px;
+      font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      background: linear-gradient(90deg, #0ff, #39ff14);
+      color: #000;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: 0 0 15px #0ff, 0 0 25px #39ff14;
+      transition: 0.3s ease;
+      width: 100%;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(90deg, #39ff14, #0ff);
+      box-shadow: 0 0 25px #39ff14, 0 0 45px #0ff;
+    }
+
+    .result {
+      font-family: 'Roboto', sans-serif;
+      font-size: 18px;
+      line-height: 1.6;
+      color: #ff3dfc;
+      text-shadow: 0 0 8px #ff3dfc, 0 0 20px #ff3dfc;
+      text-align: center;
+    }
+
+    .highlight {
+      color: #ff3dfc;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.6rem;
+      }
+
+      .result {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h1><u>Age Calculator</u></h1>
+    <label for="birthday">Enter Your Birthday:</label>
+    <input type="date" id="birthday" />
+    <button onclick="startCalculation()">Calculate</button>
+    <div id="output" class="result"></div>
+  </div>
+
+  <script>
+    let interval;
+
+    function startCalculation() {
+      clearInterval(interval);
+      calculateAge();
+      interval = setInterval(calculateAge, 1000);
+    }
+
+    function calculateAge() {
+      let birthdayInput = document.getElementById("birthday").value;
+
+      if (!birthdayInput) {
+        document.getElementById("output").innerHTML =
+          "<span class='highlight'>⚠ Please enter a valid date.</span>";
+        return;
+      }
+
+      const birthDate = new Date(birthdayInput);
+      if (isNaN(birthDate)) {
+        document.getElementById("output").innerHTML =
+          "<span class='highlight'>⚠ Invalid date format!</span>";
+        return;
+      }
+
+      const now = new Date();
+
+      let years = now.getFullYear() - birthDate.getFullYear();
+      let months = now.getMonth() - birthDate.getMonth();
+      let days = now.getDate() - birthDate.getDate();
+
+      if (days < 0) {
+        months--;
+        days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+      }
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      let diff = now - birthDate;
+      let seconds = Math.floor(diff / 1000);
+      let minutes = Math.floor(seconds / 60);
+      let hours = Math.floor(minutes / 60);
+
+      seconds = seconds % 60;
+      minutes = minutes % 60;
+      hours = hours % 24;
+
+      document.getElementById("output").innerHTML =
+        `You are <span class="highlight">${years}</span> years, 
+         <span class="highlight">${months}</span> months, 
+         <span class="highlight">${days}</span> days,<br/>
+         <span class="highlight">${hours}</span> hours, 
+         <span class="highlight">${minutes}</span> minutes, 
+         <span class="highlight">${seconds}</span> seconds old upto now.`;
+    }
+  </script>
+</body>
+</html>
