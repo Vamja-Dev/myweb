@@ -172,10 +172,15 @@
         @media (max-width: 520px) {
             .row {
                 flex-direction: column;
+                gap: 12px;
+                /* keep spacing between stacked elements */
             }
 
-            input[type="number"] {
+            input[type="number"],
+            select,
+            .swap {
                 max-width: 100%;
+                width: 100%;
             }
 
             .controls {
